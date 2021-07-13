@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <th:block th:insert="common/include :: include"></th:block>
+    <style>
+        .holeSize {
+            height: 100px;
+        }
+        .moleSize {
+            height: 100px;
+        }
+        .hammerSize {
+            height: 75px;
+        }
+        .hitMoleSize {
+            height: 100px;
+        }
+        .moleLeftSite {
+            position: absolute;
+            left: 20%;
+            top: 35%;
+        }
+        .moleUpSite {
+            position: absolute;
+            left: 45%;
+            top: 10%;
+        }
+        .moleDownSite {
+            position: absolute;
+            left: 45%;
+            top: 65%;
+        }
+        .moleRightSite {
+            position: absolute;
+            top: 35%;
+            left: 70%;
+        }
+        .hammerLeftSite {
+            position: absolute;
+            left: 24%;
+            top: 33%;
+        }
+        .hammerUpSite {
+            position: absolute;
+            left: 49%;
+            top: 7%;
+        }
+        .hammerDownSite {
+            position: absolute;
+            left: 49%;
+            top: 62%;
+        }
+        .hammerRightSite {
+            position: absolute;
+            top: 33%;
+            left: 73%;
+        }
+        .endTime {
+            position: absolute;
+            left: 35%;
+            font-size: 25px;
+            color: white;
+            font-weight: bold;
+        }
+        .scoreClass {
+            position: absolute;
+            left: 50%;
+            font-size: 25px;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" style="height: 100%; width: 100%">
+        <div :style="mainStyle">
+            <div v-show="!startGame">
+                <div style="font-size: 25px;position: absolute;top: 50%;left: 45%;">
+                    <span>按下空格游戏开始</span>
+                </div>
+            </div>
+            <div v-show="startGame && !endGame">
+                <div class="endTime">
+                    <span>倒计时：{{endGameTime}}</span>
+                </div>
+                <div class="scoreClass">
+                    <span>得分：{{score}}</span>
+                </div>
+                <div style="display: inline; position: absolute; top: 35%; left: 20%;">
+                    <img :src="ctx + '/image/hole.png'" class="holeSize">
+                </div>
+                <div style="display: inline; position: absolute; left: 45%; top: 10%;">
+                    <img :src="ctx + '/image/hole.png'" class="holeSize">
+                </div>
+                <div style="display: inline; position: absolute; left: 45%; top: 65%;">
+                    <img :src="ctx + '/image/hole.png'" class="holeSize">
+                </div>
+                <div style="display: inline; position: absolute; top: 35%; left: 70%;">
+                    <img :src="ctx + '/image/hole.png'" class="holeSize">
+                </div>
+                <div style="display: inline" v-show="showMole" :class="{'moleLeftSite': isMoleLeft, 'moleUpSite': isMoleUp, 'moleDownSite': isMoleDown, 'moleRightSite': isMoleRight}">
+                    <img :src="ctx + '/image/mole.png'" class="moleSize">
+                </div>
+                <div style="display: inline" v-show="showHammer" :class="{'hammerLeftSite': isHammerLeft, 'hammerUpSite': isHammerUp, 'hammerDownSite': isHammerDown, 'hammerRightSite': isHammerRight}">
+                    <img :src="ctx + '/image/hammer.png'" class="hammerSize">
+                </div>
+                <div style="display: inline" v-show="showHitMole" :class="{'moleLeftSite': isHitMoleLeft, 'moleUpSite': isHitMoleUp, 'moleDownSite': isHitMoleDown, 'moleRightSite': isHitMoleRight}">
+                    <img :src="ctx + '/image/hitMole.png'" class="hitMoleSize">
+                </div>
+            </div>
+            <div v-show="endGame">
+                <div style="font-size: 25px;position: absolute;top: 45%;left: 45%;">
+                    游戏结束，得分为：{{score}}<br>
+                    按下空格重新开始
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var vm = new Vue({
+        el: '#app',
+        data: function() {
+            return {
+                mainStyle: {
+                    backgroundImage: 'url(' + ctx + '/image/backgroup.jpg)',
+                    fontSize: '13px',
+                    height: '100%',
+                    width: '100%',
+                    backgroundSize: 'cover'
+                },
+                showMole: false,
+                showHammer: false,
+                showHitMole: false,
+                isHammerLeft: false,
+                isHammerUp: false,
+                isHammerDown: false,
+                isHammerRight: false,
+                isMoleLeft: false,
+                isMoleUp: false,
+                isMoleDown: false,
+                isMoleRight: false,
+                isHitMoleLeft: false,
+                isHitMoleUp: false,
+                isHitMoleDown: false,
+                isHitMoleRight: false,
+                randomNum: 0,
+                gameTime: 30,
+                endGameTime: 30,
+                count: 0,
+                everyScore: 5,
+                score: 0,
+                startGame: false,
+                endGame: false
+            }
+        },
+        mounted: function () {
+            var that = this
+            window.addEventListener("keydown", function(event) {
+                var key = event.key
+                var keyCode = event.keyCode
+                if (key === 'ArrowRight') {
+                    that.rightHandle()
+                }
+                if (key === 'ArrowDown') {
+                    that.downHandle()
+                }
+                if (key === 'ArrowLeft') {
+                    that.leftHandle()
+                }
+                if (key === 'ArrowUp') {
+                    that.upHandle()
+                }
+                if (keyCode == 32) {
+                    that.startGame = true
+                    that.endGame = false
+                    that.initGame()
+                    that.startHandle()
+                }
+            })
+        },
+        methods: {
+            upHandle: function () {
+                var that = this
+                this.showHammer = true
+                this.isHammerLeft = false
+                this.isHammerUp = true
+                this.isHammerDown = false
+                this.isHammerRight = false
+                var showMole = this.showMole
+                var randomNum = this.randomNum
+                if (randomNum == 2 && showMole) {
+                    this.isHitMoleLeft = false
+                    this.isHitMoleUp = true
+                    this.isHitMoleDown = false
+                    this.isHitMoleRight = false
+                    this.showMole = false
+                    this.showHitMole = true
+                    this.score = (++this.count) * this.everyScore
+                }
+                setTimeout(function () {
+                    that.showHammer = false
+                    that.showHitMole = false
+                }, 200)
+            },
+            downHandle: function () {
+                var that = this
+                this.showHammer = true
+                this.isHammerLeft = false
+                this.isHammerUp = false
+                this.isHammerDown = true
+                this.isHammerRight = false
+                var showMole = this.showMole
+                var randomNum = this.randomNum
+                if (randomNum == 3 && showMole) {
+                    this.isHitMoleLeft = false
+                    this.isHitMoleUp = false
+                    this.isHitMoleDown = true
+                    this.isHitMoleRight = false
+                    this.showMole = false
+                    this.showHitMole = true
+                    this.score = (++this.count) * this.everyScore
+                }
+                setTimeout(function () {
+                    that.showHammer = false
+                    that.showHitMole = false
+                }, 200)
+            },
+            leftHandle: function () {
+                var that = this
+                this.showHammer = true
+                this.isHammerLeft = true
+                this.isHammerUp = false
+                this.isHammerDown = false
+                this.isHammerRight = false
+                var showMole = this.showMole
+                var randomNum = this.randomNum
+                if (randomNum == 1 && showMole) {
+                    this.isHitMoleLeft = true
+                    this.isHitMoleUp = false
+                    this.isHitMoleDown = false
+                    this.isHitMoleRight = false
+                    this.showMole = false
+                    this.showHitMole = true
+                    this.score = (++this.count) * this.everyScore
+                }
+                setTimeout(function () {
+                    that.showHammer = false
+                    that.showHitMole = false
+                }, 200)
+            },
+            rightHandle: function () {
+                var that = this
+                this.showHammer = true
+                this.isHammerLeft = false
+                this.isHammerUp = false
+                this.isHammerDown = false
+                this.isHammerRight = true
+                var showMole = this.showMole
+                var randomNum = this.randomNum
+                if (randomNum == 4 && showMole) {
+                    this.isHitMoleLeft = false
+                    this.isHitMoleUp = false
+                    this.isHitMoleDown = false
+                    this.isHitMoleRight = true
+                    this.showMole = false
+                    this.showHitMole = true
+                    this.score = (++this.count) * this.everyScore
+                }
+                setTimeout(function () {
+                    that.showHammer = false
+                    that.showHitMole = false
+                }, 200)
+            },
+            moleShow: function () {
+                var randomNum = Math.floor(Math.random() * 4) + 1
+                // 左边出现
+                if (randomNum == 1) {
+                    this.showMole = true
+                    this.isMoleLeft = true
+                    this.isMoleUp = false
+                    this.isMoleDown = false
+                    this.isMoleRight = false
+                }
+                // 上面出现
+                if (randomNum == 2) {
+                    this.showMole = true
+                    this.isMoleLeft = false
+                    this.isMoleUp = true
+                    this.isMoleDown = false
+                    this.isMoleRight = false
+                }
+                // 下面出现
+                if (randomNum == 3) {
+                    this.showMole = true
+                    this.isMoleLeft = false
+                    this.isMoleUp = false
+                    this.isMoleDown = true
+                    this.isMoleRight = false
+                }
+                // 右边出现
+                if (randomNum == 4) {
+                    this.showMole = true
+                    this.isMoleLeft = false
+                    this.isMoleUp = false
+                    this.isMoleDown = false
+                    this.isMoleRight = true
+                }
+                this.randomNum = randomNum
+            },
+            startHandle: function () {
+                var that = this
+                var gameTime = that.gameTime
+                var game = setInterval(function () {
+                    that.moleShow()
+                }, 0.5*1000)
+                var endGameTime = setInterval(function () {
+                    that.endGameTime -= 1
+                }, 1000)
+                setTimeout(function () {
+                    clearInterval(game)
+                    clearInterval(endGameTime)
+                    that.endGame = true
+                }, gameTime * 1000)
+            },
+            initGame: function () {
+                this.score = 0
+                this.endGameTime = 30
+                this.count = 0
+            }
+        }
+    })
+</script>
+</html>

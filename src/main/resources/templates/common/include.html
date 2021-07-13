@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<header th:fragment="include">
+    <link rel="stylesheet" th:href="${session.ctx} + '/css/base.css'">
+    <script th:src="${session.ctx} + '/js/jquery.min.js'"></script>
+    <script th:src="${session.ctx} + '/js/vue.js'"></script>
+    <input th:value="${session.ctx}" id="ctx" type="hidden">
+    <script type="text/javascript">
+        var ctx = $("#ctx").val();
+    </script>
+</header>
+</html>
